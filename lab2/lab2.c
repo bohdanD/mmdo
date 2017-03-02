@@ -24,19 +24,51 @@
 
 #include <math.h>
 #include <stdio.h>
-#define m 2
-#define n 6
-#define isMaxTask 1
+//#define m 2
+//#define n 6
+//#define isMaxTask 1
+int m, n;
+int isMaxTask;
+int Nb[10];
 
-void readA(double (*A)[n + 1]){
+
+void readA(double (*A)[100]){
 	FILE *f = fopen("A.txt", "r");
-	for(int i = 0; i < m; i++){
-		for(int j = 0; j < n + 1; j++){
-			fscanf(f, "%lf\t", &A[i][j]);
-		}
-		fscanf(f, "\n");
+	//for(int i = 0; i < m; i++){
+	//	for(int j = 0; j < n + 1; j++){
+	//		fscanf(f, "%lf\t", &A[i][j]);
+	//	}
+	//	fscanf(f, "\n");
+	//}
+	m = 0;
+	n = 0;
+	char buff[250];
+	double a[100];
+	while(!feof(f))
+		if(fgets(buff, 250, (FILE* )f))
+			m++;
+	fclose(f);
+	f = fopen("A.txt", "r");
+	while(!feof(f)){
+		if(fscanf(f, "%lf\t", &a[n]))
+			n++;
 	}
 	fclose(f);
+	isMaxTask = a[n-1];
+	n = n / m - 2;
+	int k =0;
+	for(int i = 0; i < m; i++){
+		for(int j = 0; j < n + 1; j++){
+			A[i][j] = a[k];
+			k++;
+		}
+	}
+	for (int i = 0; i < m; i++)
+	{
+		Nb[i] = n - m + 1 + i;
+	}
+	
+	
 }
 
 void readC(double *C){
@@ -184,14 +216,17 @@ void printCbNb(double *Cb, int *Nb){
 
 int main(int argc, char **argv)
 {
-	double A[m][n+1], delta[n + 1];
+	double A[10][100];
+	readA(A);
+	//printf("m=%d\tn=%d\t", m, n);
+	double /*A[m][n+1], */delta[n + 1];
 	double Cb[m], C[n + 1];
-	int Nb[m];
+	//int Nb[m];
 	int k, p;
 	readA(A);
 	readC(C);
 	readCb(Cb);
-	readNb(Nb);
+	//readNb(Nb);
 	printTable(A);
 	printCbNb(Cb, Nb);
 	getDelta(delta, Cb, C, A);
