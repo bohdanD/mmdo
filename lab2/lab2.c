@@ -122,14 +122,15 @@ void changeBasis(double **A, int k, int p){
 			A[i][j] = temp[i][j];
 }
 
-void getDelta(double *delta, double *Cb, double *C, double **A){
-	for(int i = 0; i < n + 1; i++){
+void getDelta(double *delta, double *Cb, double *C, double **A, int *Nb){
+	for(int i = 1; i < n + 1; i++){
 	double sum = 0;
 		for(int j = 0; j < m; j++){
 			sum += Cb[j] * A[j][i];
 		}
-		delta[i] = sum - C[i];
+		delta[i-1] = sum - C[i-1];
 	}
+	
 }
 
 int checkDelta(double *delta, int isMax){
@@ -152,8 +153,8 @@ int checkDelta(double *delta, int isMax){
 
 int getP(double *delta, int isMax){
 	int p = 0;
-	double max = 0;
-	for(int i = 0; i < n+1; i++){
+	double max = 999;
+	for(int i = 0; i < n; i++){
 		if(isMax == 1){
 			if(delta[i] < max){
 				max = delta[i];
@@ -170,7 +171,7 @@ int getP(double *delta, int isMax){
 			}
 		}
 	}
-	return p;
+	return p+1;
 }
 
 int getK(double **A, double *delta, int p){
@@ -178,14 +179,14 @@ int getK(double **A, double *delta, int p){
 	double min = 9999;
 	double *teta = (double *) malloc(sizeof(double) * m);
 	for(int i = 0; i < m; i++){
-		if(fabs(A[i][p]) > 0.00000001){
-			teta[i] = A[i][n] / A[i][p];
-			if(teta[i] >= 0)
+		//if(fabs(A[i][p]) > 0.00000001){
+			teta[i] = A[i][0] / A[i][p];
+			//if(teta[i] >= 0)
 			if(teta[i] < min){
 				min = teta[i];
 				k = i;
 			}
-		}
+		//}
 		
 	}
 	free(teta);
@@ -250,22 +251,22 @@ int main(int argc, char **argv)
 	//readNb(Nb);
 	printTable(A);
 	printCbNb(Cb, Nb);
-	getDelta(delta, Cb, C, A);
+	getDelta(delta, Cb, C, A, Nb);
 	printDelta(delta);
 	if(isNoResult(A, delta) == 1)
 		return 0;
 	while(checkDelta(delta, isMaxTask) == 0){
 		p = getP(delta, isMaxTask);
 		k = getK(A, delta, p);
-		//printf("p= %d, k= %d\n", p, k);
+		printf("p= %d, k= %d\n", p, k);
 		Nb[k] = p;
+		//printf("%d\n", Nb[0]);
 		changeBasis(A, k, p);
 		printTable(A);
-		Cb[k] = C[Nb[k]];
+		Cb[k] = C[Nb[k] - 1];
 		printCbNb(Cb, Nb);
-		getDelta(delta, Cb, C, A);
+		getDelta(delta, Cb, C, A, Nb);
 		printDelta(delta);
-//		scanf("%d", k);
 		if(isNoResult(A, delta) == 1)
 			return 0;
 	}
