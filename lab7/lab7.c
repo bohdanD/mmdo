@@ -239,7 +239,7 @@ void search(double** C, double** X, int** signs, double* A){
 						signs[i][k] = 4; // 0`
 						double* bi;
 						bi = nevyazkaI(X, A);
-						//printf("bi=%lf\n", bi[i]);
+						//printf("bi=%lf\n", bi[i]); 
 						if(bi[i] > 0){
 							flag = 1;
 							break;
