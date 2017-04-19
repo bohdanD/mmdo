@@ -161,6 +161,113 @@ double nevjazka(double** X, double* A, double* B){
 	return sumBi + sumBj;
 }
 
+double* nevyazkaI(double** X, double* A){
+	double* bi = malloc(m * sizeof(double));
+	for(int i=0; i<m; i++){
+		double sum = 0;
+		for(int j=0; j<n; j++){
+			sum += X[i][j];
+		}
+		bi[i] = A[i] - sum;
+	}
+	return bi;
+}
+
+double* nevyazkaJ(double** X, double* B){
+	double* bj = malloc(n * sizeof(double));
+	for(int j=0; j<n; j++){
+		double sum = 0;
+		for(int i=0; i<m; i++){
+			sum += X[i][j];
+		}
+		bj[j] = B[j] - sum;
+	}
+	return bj;
+}
+// 10 - +
+// istot 0 = 3, 13
+// 2 - -
+// 
+void rozmitka(double** X, double** C, double* B, int** signs){
+	double* bj;
+	bj = nevyazkaJ(X, B);
+	if(bj==NULL)
+		printf("null");
+	for(int j=0; j<n; j++){
+		printf("%f\t", bj[j]);
+		if(fabs(bj[j]) < eps){
+			for(int i = 0; i<m; i++){
+				signs[i][j] = 10;
+			}
+		}
+	}
+	printf("\n");
+	for(int i = 0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(fabs(C[i][j]) < eps && fabs(X[i][j]) > eps){
+				signs[i][j] += 3;
+			}
+		}
+	}
+	free(bj);
+}
+
+void printSigns(int** signs){
+	for(int i = 0; i<m; i++){
+		for(int j=0; j<n; j++){
+			printf("%d\t", signs[i][j]);
+		}
+		printf("\n");
+	}
+}
+// 0` = 4
+// 0* = 5
+void search(double** C, double** X, int** signs, double* A){
+	int flag=0;
+	for(int i = 0; i<m; i++){
+		if(flag)
+			break;
+		for(int j=0; j<n; j++){
+			if(flag)
+				break;
+			if(signs[i][j] >= 10){
+				break;
+			}
+			if(signs[i][j] < 10){
+				for(int k = 0; k<n; k++){
+					if(fabs(C[i][k]) < eps){
+						signs[i][k] = 4; // 0`
+						double* bi;
+						bi = nevyazkaI(X, A);
+						//printf("bi=%lf\n", bi[i]);
+						if(bi[i] > 0){
+							flag = 1;
+							break;
+						}else{
+							if(fabs(bi[i]) < eps){
+								for(int r=0; r<n; r++){
+									if(fabs(C[i][r]) < eps && signs[i][r] < 10)
+										signs[i][r] += 10; // +
+								}
+								for(int r=0; r<n; r++){
+									if(signs[i][r] == 13){
+										signs[i][r] = 15; //0* with +
+										for(int s=0; s<m; s++){
+											signs[s][r] -= 10; // (+) for all col signs[i][r] will be 5 == 0*
+										}
+										j = j -1; //check this col ones more
+									} 
+								}
+							}
+						}
+						free(bi);
+					}
+				}
+				
+			}
+		}
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -196,6 +303,38 @@ int main(int argc, char **argv)
 	methodNorhWest(X, C, A, B);
 	printTable(X, A, B);
 	printf("Nevjazka = %lf \n", nevjazka(X, A, B));
+	int** signs;
+	signs = (int**)malloc(m * sizeof(int*));
+	for(int i = 0; i < m; i++)
+		signs[i] = (int*)malloc(n * sizeof(int));
+		for(int i = 0; i<m; i++){
+		for(int j=0; j<n; j++){
+			signs[i][j] = 0;
+		}
+	}
+	rozmitka(X, C, B, signs);
+	printSigns(signs);
+	search(C, X, signs, A);
+	printf("----------\n");
+	//double* bi = nevyazkaI(X, A);
+	//for(int i=0; i<m; i++)
+		//printf("%lf\t", bi[i]);
+	printSigns(signs);
+	for(int i = 0; i < m; i++){
+		free(C[i]);
+		free(X[i]);
+		free(Z[i]);
+		free(delta[i]);
+		free(signs[i]);
+	}
+		free(C);
+		free(X);
+		free(Z);
+		free(delta);
+		free(signs);
+		free(A);
+		free(B);
+	
 	return 0;
 }
 
