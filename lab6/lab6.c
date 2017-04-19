@@ -106,6 +106,16 @@ void printX(double **X){
 	}
 }
 
+void printDelta(double** delta){
+	printf("Delta:\n");
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			printf("%.2lf\t", delta[i][j]);
+		}
+		printf("\n");
+	}
+}
+
 void findUV(double **C, double **X, double *U, double *V){
 		for(int i=0; i<m; i++){
 			U[i] = -1;
@@ -120,16 +130,40 @@ void findUV(double **C, double **X, double *U, double *V){
 				V[j] = C[0][j] - U[0];
 			}
 		}
-		for(int i=1; i<n; i++){
-			for(int j=0; j<m; j++){
+		for(int i=1; i<m; i++){
+			for(int j=0; j<n; j++){
 				if(X[i][j]>=0){
 					if(V[j] != -1){
 						U[i] = C[i][j] - V[j];
 					}
 				}
 			}
+			
 		}
 }
+
+void findDelta(double** C, double** delta, double* U, double* V){
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			delta[i][j] = U[i] + V[j] - C[i][j];
+		}
+	}
+	
+}
+
+int isOptimal(double** delta){
+	int flag=1;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(delta[i][j]>0){
+				flag = 0;
+				break;
+			}
+		}
+	}
+	return flag;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -159,9 +193,27 @@ int main(int argc, char **argv)
 	checkOpen(A, B);
 	methodNorhWest(X, A, B);
 	printX(X);
-	double* U = malloc(m * sizeof(double));
-	double* V = malloc(n * sizeof(double));
+	double* U = (double*) malloc(m * sizeof(double));
+	double* V = (double*) malloc(n * sizeof(double));
+	findUV(C, X, U, V);
+	findDelta(C, delta, U, V);
+	printDelta(delta);
+	while(!isOptimal(delta)){
+		
+	}
 	
+	for(int i = 0; i < m; i++){
+		free(C[i]);
+		free(X[i]);
+		free(Z[i]);
+		free(delta[i]);
+	}
+	free(C);
+	free(X);
+	free(Z);
+	free(delta);
+	free(A);
+	free(B);
 	return 0;
 }
 
