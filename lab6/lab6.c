@@ -164,6 +164,53 @@ int isOptimal(double** delta){
 	return flag;
 }
 
+void firstPart(double** X, double** delta){
+	int** v = (int**) malloc(sizeof(int*) * m);
+	for(int i=0; i<m; i++){
+		v[i] = (int*) malloc(sizeof(int) * n);
+	}
+	
+	double max = 0;
+	int row = -1;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			v[i][j] = 0; 
+			if(delta[i][j] > max){
+				max = delta[i][j];
+				row = i;
+			}
+		}
+	}
+	for(int j=0; j<n; j++){
+		v[row][j] = 1;
+		if(X[row][j] >= 0){
+			for(int i=0; i<m; i++){
+				v[i][j] = 1;
+				for(int col=0; col<n; col++){
+					if(X[i][col] >= 0){
+						v[i][col] = 1;
+					}
+				}
+			}
+		}
+	}
+	printf("vydil:\n");
+	int flag = 1;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			printf("%d\t", v[i][j]);
+			if(X[i][j] >= 0 && v[i][j] != 1)
+				flag = 0;
+		}
+		printf("\n");
+	}
+	printf("flag= %d\n", flag);
+	for(int i=0; i<m; i++){
+		free(v[i]);
+	}
+	free(v);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -192,15 +239,17 @@ int main(int argc, char **argv)
 	printTable(C, A, B);
 	checkOpen(A, B);
 	methodNorhWest(X, A, B);
+	printf("X:\n");
 	printX(X);
 	double* U = (double*) malloc(m * sizeof(double));
 	double* V = (double*) malloc(n * sizeof(double));
 	findUV(C, X, U, V);
 	findDelta(C, delta, U, V);
 	printDelta(delta);
-	while(!isOptimal(delta)){
+	firstPart(X, delta);
+	//while(!isOptimal(delta)){
 		
-	}
+	//}
 	
 	for(int i = 0; i < m; i++){
 		free(C[i]);
