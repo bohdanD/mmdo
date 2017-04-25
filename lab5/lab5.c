@@ -69,6 +69,10 @@ int main(){
 				printf("%.2lf\t", a[i][j]);
 			printf("\n");
 		}
+		printf("delta:\n");
+		for(int j = 0; j <= n; j++)
+				printf("%.2lf\t", delta(j));
+			printf("\n");
 		int isRes = 0, isNoGood = 0;
 		for(int i = 1; i <= m; i++)
 			if(a[i][0] > 0)
@@ -100,6 +104,7 @@ int main(){
 			}
 //----------find p--------------------------
 		int p = -1;
+		double min = 0;
 		for(int i = 1; i <= n; i++){
 			int flag = 0;
 			for(int j = 1; j <= m; j++)
@@ -111,8 +116,11 @@ int main(){
 				p = i;
 				continue;
 			}
-			if((delta(i) / a[k][i]) < (delta(p) / a[k][p]))
+			if(a[k][i] < 0 && (delta(i) / a[k][i]) < min){
 				p = i;
+				min = delta(i) / a[k][i];
+			}
+				
 		}
 		newA(a, k, p);
 		Nb[k] = p;
