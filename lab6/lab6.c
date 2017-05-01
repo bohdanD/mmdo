@@ -28,6 +28,12 @@
 #define m 3
 #define n 5
 
+int isRowVydil(int** v, int rowIndex);
+int isColVydil(int** v, int colIndex);
+void vydilRow(int** v, int rowIndex);
+void vydilCol(int** v, int colIndex);
+void vykres(double** X, int** v, int k, int l);
+
 void scanData(double **C, double *A, double *B){
 	FILE *fc = fopen("C.txt", "r");
 	FILE *fa = fopen("A.txt", "r");
@@ -194,21 +200,160 @@ void firstPart(double** X, double** delta){
 			}
 		}
 	}
-	printf("vydil:\n");
-	int flag = 1;
+	//vydilRow(v, row);
+	//for(int j=0; j<n; j++){
+	////	v[row][j] = 1;	
+	//	if(X[row][j] >= 0){
+	//		//for(int i=0; i<m; i++){
+	//		//	v[i][j] = 1;
+	//		vydilCol(v, j);
+	//		for(int i=0; i<m; i++){
+	//			for(int col=0; col<n; col++){
+	//				if(X[i][col] >= 0){
+	//					vydilRow(v, i);
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+	//printf("vydil:\n");
+	//int flag = 1;
+	//for(int i=0; i<m; i++){
+	//	for(int j=0; j<n; j++){
+	//		printf("%d\t", v[i][j]);
+	//		if(X[i][j] >= 0 && v[i][j] != 1)
+	//			flag = 0;
+	//	}
+	//	printf("\n");
+	//}
+	//printf("flag= %d\n", flag);
+	
 	for(int i=0; i<m; i++){
-		for(int j=0; j<n; j++){
-			printf("%d\t", v[i][j]);
-			if(X[i][j] >= 0 && v[i][j] != 1)
-				flag = 0;
+		if(isRowVydil(v, i)){
+			for(int j=0; j<n; j++){
+				delta[i][j] -= max;
+			}
 		}
-		printf("\n");
 	}
-	printf("flag= %d\n", flag);
+	
+	for(int j=0; j<n; j++){
+		if(isColVydil(v, j)){
+			for(int i=0; i<m; i++)
+				delta[i][j] += max;
+		}
+	}
+	
 	for(int i=0; i<m; i++){
 		free(v[i]);
 	}
 	free(v);
+}
+
+int isRowVydil(int** v, int rowIndex){
+	int count = 0;
+	for(int j = 0; j<n; j++){
+		if(v[rowIndex][j] == 1)
+			count++;
+	}
+	return (count == n) ? 1 : 0;
+}
+
+int isColVydil(int** v, int colIndex){
+	int count = 0;
+	for(int i=0; i<m; i++){
+		if(v[i][colIndex] == 1)
+			count++;
+	}
+	return (count == m) ? 1 : 0;
+}
+
+void secondPart(double** X, double** delta){
+	int** v = (int**) malloc(sizeof(int*) * m);
+	for(int i=0; i<m; i++){
+		v[i] = (int*) malloc(sizeof(int) * n);
+	}
+	
+	int k,l;
+	double max = 0;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(delta[i][j] >= max){
+				max = delta[i][j];
+				k = i;
+				l = j;
+			}	
+		}
+	}
+	
+	double teta = 999999;
+	int count = 0;
+	vykres(X, v, k, l);
+	v[k][l] = -2;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(X[i][j] >= 0 && v[i][j] == 1){
+				count++;
+				v[i][j] = count;
+				if(X[i][j] < teta && count % 2 > 0){
+					teta = X[i][j];
+				}
+			}
+		}
+	}
+	
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(X[i][j] >= 0 && v[i][j] % 2 == 0){
+				X[i][j] += teta;
+			} 
+			if(X[i][j] >= 0 && v[i][j] % 2 != 0){
+				X[i][j] -= teta;
+			}
+		}
+	}
+	
+	
+	
+	for(int i=0; i<m; i++){
+		free(v[i]);
+	}
+	free(v);
+}
+
+void vydilRow(int** v, int rowIndex){
+	for(int j=0; j<n; j++){
+		v[rowIndex][j] = 1;
+	}
+}
+void vydilCol(int** v, int colIndex){
+	for(int i=0; i<m; i++){
+		v[i][colIndex] = 1;
+	}
+}
+
+void vykres(double** X, int** v, int k, int l){
+	
+	for(int i=0; i<m; i++){
+		if(i != k){
+			int count = 0;
+			for(int j=0; j<n; j++)
+				if(X[i][j] >= 0)
+					count++;
+			if(count <= 1)
+				vydilRow(v, i);
+		}
+	}
+	
+	for(int j=0; j<n; j++){
+		if(j != l){
+			int count = 0;
+			for(int i=0; i<m; i++)
+				if(X[i][j] >= 0 && v[i][j] != 1)
+					count++;
+			if(count <= 1)
+				vydilCol(v, j);
+		}
+	}
 }
 
 
@@ -247,10 +392,19 @@ int main(int argc, char **argv)
 	findDelta(C, delta, U, V);
 	printDelta(delta);
 	firstPart(X, delta);
-	//while(!isOptimal(delta)){
-		
-	//}
-	
+	printDelta(delta);
+	//secondPart(X, delta);
+	//printX(X);
+	//firstPart(X, delta);
+	//printDelta(delta);
+	//secondPart(X, delta);
+	//printf("isOpt = %d\n", isOptimal(delta));
+	while(!isOptimal(delta)){
+		secondPart(X, delta);
+		firstPart(X, delta);
+	}
+	printX(X);
+	printDelta(delta);
 	for(int i = 0; i < m; i++){
 		free(C[i]);
 		free(X[i]);
