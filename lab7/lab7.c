@@ -29,6 +29,10 @@
 #define n 5
 #define eps 0.0000000001
 
+int isRowVydil(int** signs, int rowIndex);
+int isColVydil(int** signs, int colIndex);
+void equalsTransformation(double** C, int** signs);
+void planCorection(double** X, double** C, int** signs, double* B);
 
 void scanData(double **C, double *A, double *B){
 	FILE *fc = fopen("C.txt", "r");
@@ -109,28 +113,20 @@ void methodNorhWest(double **X, double** C, double *A, double *B){
 			X[i][j] = -1;
 		}
 	}
-	int i =0;
-	int j=0;
-	while(i != m && j != n){
-		if(fabs(C[i][j]) < eps){
-			if(A[i] < B[j]){
-				X[i][j] = A[i];
-				B[j] -= X[i][j];
-				i++;
-			}else if(A[i] > B[j]){
-				X[i][j] = B[j];
-				A[i] -= X[i][j];
-				j++;
-			}else if(A[i] == B[j]){
-				X[i][j] =A[i];
-				A[i] = 0;
-				j++;
+	for(int i=0; i<m; i++)
+		for(int j=0; j<n; j++){
+			if(fabs(C[i][j]) < eps){
+				if(A[i] < B[j]){
+					X[i][j] = A[i];
+					A[i] -= X[i][j];
+					B[j] -= X[i][j];
+				}else if(A[i] >= B[j]){
+					X[i][j] = B[j];
+					B[j] -= X[i][j];
+					A[i] -= X[i][j];
+				}
 			}
-		}else{
-			i++;
 		}
-
-	}
 }
 
 double nevjazka(double** X, double* A, double* B){
@@ -194,7 +190,7 @@ void rozmitka(double** X, double** C, double* B, int** signs){
 	if(bj==NULL)
 		printf("null");
 	for(int j=0; j<n; j++){
-		printf("%f\t", bj[j]);
+		//printf("%f\t", bj[j]);
 		if(fabs(bj[j]) < eps){
 			for(int i = 0; i<m; i++){
 				signs[i][j] = 10;
@@ -204,7 +200,7 @@ void rozmitka(double** X, double** C, double* B, int** signs){
 	printf("\n");
 	for(int i = 0; i<m; i++){
 		for(int j=0; j<n; j++){
-			if(fabs(C[i][j]) < eps && fabs(X[i][j]) > eps){
+			if(fabs(C[i][j]) < eps && X[i][j] != -1){
 				signs[i][j] += 3;
 			}
 		}
@@ -219,34 +215,71 @@ void printSigns(int** signs){
 		}
 		printf("\n");
 	}
+	printf("\n");
 }
+//----------------------------------
+int doSearch(int** signs, int rowIndex){
+	for(int j=0; j<n; j++){
+		if(isColVydil(signs, j)){
+			if(signs[rowIndex][j]==13){
+				signs[rowIndex][j] = 15;
+				for(int i=0; i<m; i++)
+					signs[i][j] -= 10;
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+void anotherSearch(double** C, double** X, int** signs, double* A){
+	double* bi;
+	int count = 0;
+	for(int j=0; j<n; j++){
+		if(!isColVydil(signs, j)){
+			for(int i=0; i<m; i++){
+				if(fabs(C[i][j]) < eps && signs[i][j] != 4){
+					signs[i][j] = 4; //0`
+					bi = nevyazkaI(X, A);
+					printf("%lf\n", bi[i]);
+					if(bi[i] > 0 )
+						return;
+					if(fabs(bi[i]) < eps){
+						count++;
+						for(int r=0; r<n; r++){
+							signs[i][r] += 10; // +
+						if(doSearch(signs, i))
+							j--;
+					}
+					
+				}
+			}
+		}
+	}
+	
+	}
+	if(count == m)
+		equalsTransformation(C, signs);
+	free(bi);
+}
+//-------------------------------------------
 // 0` = 4
 // 0* = 5
 void search(double** C, double** X, int** signs, double* A){
-	int flag=0;
 	for(int i = 0; i<m; i++){
-		if(flag)
-			break;
 		for(int j=0; j<n; j++){
-			if(flag)
-				break;
-			if(signs[i][j] >= 10){
-				break;
-			}
-			if(signs[i][j] < 10){
+			if(!isColVydil(signs, j)){
 				for(int k = 0; k<n; k++){
 					if(fabs(C[i][k]) < eps){
 						signs[i][k] = 4; // 0`
 						double* bi;
 						bi = nevyazkaI(X, A);
-						//printf("bi=%lf\n", bi[i]); 
+						printf("bi=%lf\n", bi[i]); 
 						if(bi[i] > 0){
-							flag = 1;
-							break;
+							return;
 						}else{
 							if(fabs(bi[i]) < eps){
 								for(int r=0; r<n; r++){
-									if(fabs(C[i][r]) < eps && signs[i][r] < 10)
+									//if(fabs(C[i][r]) < eps && signs[i][r] < 10)
 										signs[i][r] += 10; // +
 								}
 								for(int r=0; r<n; r++){
@@ -267,7 +300,116 @@ void search(double** C, double** X, int** signs, double* A){
 			}
 		}
 	}
+	equalsTransformation(C, signs);
 }
+
+void equalsTransformation(double** C, int** signs){
+	double h = 99999;
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			if(signs[i][j] < 10){
+				if(C[i][j] < h && C[i][j] != 0)
+					h = C[i][j];
+			}
+		}
+	}
+	printf("h= %lf\n", h);
+	for(int i=0; i<m; i++)
+		if(!isRowVydil(signs, i))
+			for(int j=0; j<n; j++)
+				if(C[i][j] != 0)
+					C[i][j] -= h;
+	for(int j=0; j<n; j++)
+		if(isColVydil(signs, j))
+			for(int i=0; i<m; i++)
+				if(C[i][j] != 0)
+					C[i][j] += h;
+			
+}
+
+int isRowVydil(int** signs, int rowIndex){
+	int count = 0;
+	for(int j=0; j<n; j++)
+		if(signs[rowIndex][j] >= 10)
+			count++;
+	return (count == n) ? 1 : 0;
+}
+
+int isColVydil(int** signs, int colIndex){
+	int count = 0;
+	for(int i=0; i<m; i++)
+		if(signs[i][colIndex] >= 10)
+			count++;
+	return (count == m) ? 1 : 0;
+}
+
+void chain(int** signs, int** L, int i, int j, int* count){
+	if((*count) % 2 > 0){
+		for(int row = i-1; row>=0; row--){
+			if(signs[row][j] == 5 || signs[row][j] == 15){ //0*
+				L[row][j] = 2;
+				(*count)++;
+				chain(signs, L, row, j, count);
+			}
+		}
+	}else{
+		for(int col = j-1; col>=0; col--){
+			if(signs[i][col] == 4 || signs[i][col] == 14){ //0`
+				L[i][col] = 1;
+				(*count)++;
+				chain(signs, L, i, col, count);
+			}
+		}
+	}
+}
+
+void planCorection(double** X, double** C, int** signs, double* B){
+	int** L = (int**)malloc(m * sizeof(int*));
+	for(int i=0; i<m; i++)
+		L[i] = (int*)malloc(n * sizeof(int));
+		
+	// forming chain
+	int count = 0;
+	int r = m-1;
+	int c = n-1;
+	if(signs[r][c] == 4 || signs[r][c] == 14){ //0`
+		L[r][c] = 1;
+		count++;
+		chain(signs, L, r, c, &count);
+	}
+	printf("count= %d\n", count);
+	double teta = 99999;
+	int flag =0;
+	for(int i=m-1; i>=0; i--){
+		if(flag)
+			break;
+		for(int j=n-1; j>=0; j--){
+			if(L[i][j] == 1){
+				double* bj = nevyazkaJ(X, B);
+				for(int k=0; k<n; k++){
+					if(bj[k] < teta)
+						teta = bj[k];
+				}
+			}
+		}
+	}
+	
+	// plan corection
+	printf("teta= %lf\n", teta);
+	for(int i=0; i<m; i++)
+		for(int j=0; j<n; j++)
+			if(L[i][j] == 1)
+				X[i][j] += teta;
+			else if(L[i][j] == 2)
+				X[i][j] -= teta;
+	
+	
+	//----freeeeee
+	for(int i=0; i<m; i++)
+		free(L[i]);
+	free(L);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -294,10 +436,10 @@ int main(int argc, char **argv)
 	double* B = malloc(n * sizeof(double));
 	
 	scanData(C, A, B);
-	printTable(C, A, B);
+	//printTable(C, A, B);
 	checkOpen(A, B);
 	findC1(C);
-	printTable(C, A, B);
+	//printTable(C, A, B);
 	findC0(C);
 	printTable(C, A, B);
 	methodNorhWest(X, C, A, B);
@@ -312,14 +454,45 @@ int main(int argc, char **argv)
 			signs[i][j] = 0;
 		}
 	}
+	//while(!fabs(nevjazka(X, A, B)) < eps){
+	//	for(int i = 0; i<m; i++){
+	//		for(int j=0; j<n; j++){
+	//			signs[i][j] = 0;
+	//		}
+	//	}
+	//	rozmitka(X, C, B, signs);
+	//	search(C, X, signs, A);
+	//	planCorection(X, C, signs, B);
+	//}
 	rozmitka(X, C, B, signs);
 	printSigns(signs);
-	search(C, X, signs, A);
+	anotherSearch(C, X, signs, A);
+		printTable(C, A, B);
+	printSigns(signs);
+	planCorection(X, C, signs, B);
+	printTable(X, A, B);
+	printf("Nevjazka = %lf \n", nevjazka(X, A, B));
+	for(int i = 0; i<m; i++){
+		for(int j=0; j<n; j++){
+			signs[i][j] = 0;
+		}
+	}
+	rozmitka(X, C, B, signs);
+	printSigns(signs);
+	anotherSearch(C, X, signs, A);
+	printSigns(signs);
+	planCorection(X, C, signs, B);
+	printTable(X, A, B);
+	printf("Nevjazka = %lf \n", nevjazka(X, A, B));
+	//rozmitka(X, C, B, signs);
+	//printSigns(signs);
+	//search(C, X, signs, A);
 	printf("----------\n");
 	//double* bi = nevyazkaI(X, A);
 	//for(int i=0; i<m; i++)
 		//printf("%lf\t", bi[i]);
-	printSigns(signs);
+	//printSigns(signs);
+	
 	for(int i = 0; i < m; i++){
 		free(C[i]);
 		free(X[i]);
